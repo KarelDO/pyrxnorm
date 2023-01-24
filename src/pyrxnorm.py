@@ -1,7 +1,7 @@
 from pydantic import BaseModel, validator
 import os
 import pandas as pd
-from typing import Optional, Callable
+from typing import Optional, Callable, Union
 
 
 class RxNorm(BaseModel):
@@ -63,28 +63,24 @@ class RxNorm(BaseModel):
         lookup_df = merged_df.set_index(["TERM1", "TERM2"]).sort_index()
         self.lookup_df = lookup_df
 
-    def terms_equivalent(self, term1: str, term2: str) -> bool:
+    def terms_equivalent(self, term1: str, term2: str) -> Union[bool, None]:
         if not isinstance(self.lookup_df, pd.DataFrame):
             raise RuntimeError("First set the lookup table using 'set_lookup'.")
         term1 = self.normalizer(term1)
         term2 = self.normalizer(term2)
-        try:
-            return len(self.lookup_df.loc[term1, term2]) > 0
-        except KeyError:
-            return False
-        except Exception as err:
-            raise
+        if term1 in self.lookup_df.index and term2 in self.lookup_df.index:
+            return (term1, term2) in self.lookup_df.index
+        else:
+            return None
 
-    def lookup_term(self, term: str) -> pd.DataFrame:
+    def lookup_term(self, term: str) -> Union[pd.DataFrame, None]:
         if not isinstance(self.lookup_df, pd.DataFrame):
             raise RuntimeError("First set the lookup table using 'set_lookup'.")
         term = self.normalizer(term)
-        try:
+        if term in self.lookup_df.index:
             return self.lookup_df.loc[term]
-        except KeyError:
+        else:
             return None
-        except Exception as err:
-            raise
 
     def _create_conso_df(self):
         # read dir
@@ -217,4 +213,8 @@ if __name__ == "__main__":
     print(rxnorm.lookup_term("watermelon"))
     print(rxnorm.lookup_term("strawberry"))
 
-    print(rxnorm.terms_equivalent("imatinib mesylate", "imatinib"))
+    print(rxnorm.terms_equivalent("imatinib mesylate", "imatinib")) # True
+    
+    print(rxnorm.terms_equivalent("imatinib mesylate", "nonesense")) # None
+    print(rxnorm.terms_equivalent("imatinib mesylate", "watermelon")) # False
+
