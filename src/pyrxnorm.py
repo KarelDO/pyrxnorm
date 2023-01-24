@@ -69,7 +69,7 @@ class RxNorm(BaseModel):
         term1 = self.normalizer(term1)
         term2 = self.normalizer(term2)
         try:
-            return len(self.lookup_df[term1, term2]) > 0
+            return len(self.lookup_df.loc[term1, term2]) > 0
         except KeyError:
             return False
         except Exception as err:
@@ -217,4 +217,4 @@ if __name__ == "__main__":
     print(rxnorm.lookup_term("watermelon"))
     print(rxnorm.lookup_term("strawberry"))
 
-    print(rxnorm.terms_equivalent("watermelon", "watermelon extract"))
+    print(rxnorm.terms_equivalent("imatinib mesylate", "imatinib"))
